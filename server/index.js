@@ -1,3 +1,14 @@
+require('./models/User');
+require('./models/Patient');
+require('./models/Doctor');
+require('./models/Department');
+require('./models/Appointment');
+require('./models/Prescription');
+require('./models/Bill');
+require('./models/NoShowPrediction');
+require('./models/DoctorLeave');
+console.log('All models loaded successfully');
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
