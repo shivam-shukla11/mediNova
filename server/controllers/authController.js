@@ -3,6 +3,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
+const Department = require('../models/Department');
+
+const sanitize = (str) => {
+  if (typeof str !== 'string') return str;
+  return str.trim().replace(/[<>]/g, '');
+};
 
 const generateToken = (user) => {
   if (!process.env.JWT_SECRET) {
@@ -87,6 +93,17 @@ exports.registerUser = async (req, res) => {
       });
     }
 
+    if (role === 'Doctor') {
+      const department = await Department.findById(departmentId);
+      if (!department) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid departmentId — department does not exist',
+          data: null,
+        });
+      }
+    }
+
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(400).json({
@@ -99,7 +116,7 @@ exports.registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
+      name: sanitize(name),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role,
@@ -113,9 +130,9 @@ exports.registerUser = async (req, res) => {
           userId: user._id,
           dob,
           gender,
-          bloodGroup,
-          address,
-          medicalHistory: medicalHistory || '',
+          bloodGroup: sanitize(bloodGroup),
+          address: sanitize(address),
+          medicalHistory: sanitize(medicalHistory || ''),
         });
       }
 
@@ -123,8 +140,8 @@ exports.registerUser = async (req, res) => {
         await Doctor.create({
           userId: user._id,
           departmentId,
-          specialization,
-          qualification,
+          specialization: sanitize(specialization),
+          qualification: sanitize(qualification),
           experience: experience || 0,
           consultationFee,
           shiftStart,

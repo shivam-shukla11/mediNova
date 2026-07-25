@@ -123,13 +123,11 @@ The AI/ML layer is kept as a **separate microservice** rather than embedded in t
 - [x] JWT-based login
 - [x] Protected route middleware (`protect`) verified with valid/invalid/missing tokens
 - [x] Role-based access middleware (`authorize`)
-
-**Known limitations / follow-up items (not blockers, but tracked for later):**
-- [ ] No format validation on email/password fields (e.g. minimum password length, valid email pattern) — consider adding `express-validator` or `Joi`
-- [ ] No validation that a Doctor's `departmentId` actually exists in the Department collection before saving
-- [ ] No rate limiting on login endpoint (brute-force protection) — consider `express-rate-limit`
-- [ ] CORS is currently open to all origins (`cors()` with no config) — fine for development, must be restricted before production/deployment
-- [ ] No input sanitization on free-text fields (name, medicalHistory, etc.)
+- [x] Format validation on email/password fields using `express-validator`
+- [x] Validation that a Doctor's `departmentId` actually exists in the Department collection before saving
+- [x] Rate limiting on login endpoint (max 5 attempts per 15 minutes) using `express-rate-limit`
+- [x] CORS restricted to configured `CLIENT_URL` origin (default: http://localhost:5173)
+- [x] Input sanitization on free-text fields (name, medicalHistory, address, specialization, qualification)
 
 ### ⬜ Phase 2 — Appointment Booking (Next up)
 - [ ] Patient books appointment with doctor
