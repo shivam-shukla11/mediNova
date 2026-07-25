@@ -114,6 +114,31 @@ The AI/ML layer is kept as a **separate microservice** rather than embedded in t
 
 ---
 
+## Development Progress
+
+### ✅ Phase 1 — Authentication System (Completed)
+- [x] User registration (Patient, Doctor, Admin roles) with linked Patient/Doctor documents
+- [x] Password hashing with bcrypt
+- [x] Duplicate email validation
+- [x] JWT-based login
+- [x] Protected route middleware (`protect`) verified with valid/invalid/missing tokens
+- [x] Role-based access middleware (`authorize`)
+
+**Known limitations / follow-up items (not blockers, but tracked for later):**
+- [ ] No format validation on email/password fields (e.g. minimum password length, valid email pattern) — consider adding `express-validator` or `Joi`
+- [ ] No validation that a Doctor's `departmentId` actually exists in the Department collection before saving
+- [ ] No rate limiting on login endpoint (brute-force protection) — consider `express-rate-limit`
+- [ ] CORS is currently open to all origins (`cors()` with no config) — fine for development, must be restricted before production/deployment
+- [ ] No input sanitization on free-text fields (name, medicalHistory, etc.)
+
+### ⬜ Phase 2 — Appointment Booking (Next up)
+- [ ] Patient books appointment with doctor
+- [ ] Patient views their appointments
+- [ ] Doctor views assigned appointments
+- [ ] Appointment status updates
+
+---
+
 ## Team Notes
 
 This README reflects the current locked scope for Phase 1. If any teammate wants to propose scope changes (adding a feature, adjusting a workflow), raise it for discussion before implementation — several design decisions here (especially around PRCS and queue handling) were made deliberately after working through real-world edge cases, so changes to those flows should be discussed as a team rather than assumed.
