@@ -22,8 +22,8 @@ exports.registerValidation = [
     .matches(/^(\+91)?[0-9]{10}$/)
     .withMessage('Phone must be 10 digits, optionally prefixed with +91'),
   body('role')
-    .isIn(['Patient', 'Doctor', 'Admin'])
-    .withMessage('Role must be Patient, Doctor, or Admin'),
+    .isIn(['Patient', 'Doctor'])
+    .withMessage('Role must be Patient or Doctor'),
   body('dob')
     .custom((value, { req }) => {
       if (req.body.role === 'Patient' && !value) {

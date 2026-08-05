@@ -1,9 +1,18 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AuthPageWrapper from './pages/AuthPageWrapper';
+import LandingPage from './pages/LandingPage';
+
 function App() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>MediNova Client</h1>
-      <p>React + Vite frontend scaffold for AI-powered hospital workflows.</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<AuthPageWrapper />} />
+        <Route path="/register" element={<AuthPageWrapper />} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

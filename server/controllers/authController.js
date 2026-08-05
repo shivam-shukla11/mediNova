@@ -5,24 +5,29 @@ const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Department = require('../models/Department');
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medinova.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin@123';
+const ADMIN_ID = process.env.ADMIN_ID || 'ADM_001';
+const JWT_SECRET = process.env.JWT_SECRET || 'medinova_dev_jwt_secret';
+
 const sanitize = (str) => {
   if (typeof str !== 'string') return str;
   return str.trim().replace(/[<>]/g, '');
 };
 
 const generateToken = (user) => {
-  if (!process.env.JWT_SECRET) {
+  if (!JWT_SECRET) {
     return null;
   }
 
   return jwt.sign(
     { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn: '7d' }
   );
 };
 
-const createUserResponse = (user, token) => ({
+const createUserResponse = (user, token, extra = {}) => ({
   success: true,
   message: 'Operation completed successfully',
   data: {
@@ -32,6 +37,7 @@ const createUserResponse = (user, token) => ({
       name: user.name,
       email: user.email,
       role: user.role,
+      ...extra,
     },
   },
 });
@@ -66,10 +72,10 @@ exports.registerUser = async (req, res) => {
       });
     }
 
-    if (!['Patient', 'Doctor', 'Admin'].includes(role)) {
+    if (!['Patient', 'Doctor'].includes(role)) {
       return res.status(400).json({
         success: false,
-        message: 'Role must be Patient, Doctor or Admin',
+        message: 'Role must be Patient or Doctor',
         data: null,
       });
     }
@@ -93,8 +99,11 @@ exports.registerUser = async (req, res) => {
       });
     }
 
+    let doctorId = null;
+    let department = null;
+
     if (role === 'Doctor') {
-      const department = await Department.findById(departmentId);
+      department = await Department.findById(departmentId);
       if (!department) {
         return res.status(400).json({
           success: false,
@@ -102,6 +111,13 @@ exports.registerUser = async (req, res) => {
           data: null,
         });
       }
+
+      const abbreviation = department.departmentName
+        .slice(0, 3)
+        .toLowerCase();
+      const existingCount = await Doctor.countDocuments({ departmentId });
+      const sequence = String(existingCount + 1).padStart(3, '0');
+      doctorId = `${abbreviation}_${sequence}`;
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -139,6 +155,7 @@ exports.registerUser = async (req, res) => {
       if (role === 'Doctor') {
         await Doctor.create({
           userId: user._id,
+          doctorId,
           departmentId,
           specialization: sanitize(specialization),
           qualification: sanitize(qualification),
@@ -166,7 +183,20 @@ exports.registerUser = async (req, res) => {
       });
     }
 
-    return res.status(201).json(createUserResponse(user, token));
+    return res.status(201).json({
+      success: true,
+      message: 'Operation completed successfully',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          doctorId: doctorId || undefined,
+        },
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -178,7 +208,7 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, doctorId, adminId } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -186,6 +216,32 @@ exports.loginUser = async (req, res) => {
         message: 'Please provide email and password',
         data: null,
       });
+    }
+
+    if (adminId) {
+      if (password !== ADMIN_PASSWORD || adminId !== ADMIN_ID || email.toLowerCase().trim() !== ADMIN_EMAIL) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid admin credentials',
+          data: null,
+        });
+      }
+
+      let user = await User.findOne({ email: ADMIN_EMAIL });
+      if (!user) {
+        const hashedAdminPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+        user = await User.create({
+          name: 'Admin',
+          email: ADMIN_EMAIL,
+          password: hashedAdminPassword,
+          role: 'Admin',
+          phone: '0000000000',
+          status: 'Active',
+        });
+      }
+
+      const token = generateToken(user);
+      return res.status(200).json(createUserResponse(user, token));
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
@@ -197,6 +253,14 @@ exports.loginUser = async (req, res) => {
       });
     }
 
+    if (user.role === 'Admin' && !adminId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Admin login requires adminId',
+        data: null,
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -204,6 +268,17 @@ exports.loginUser = async (req, res) => {
         message: 'Invalid credentials',
         data: null,
       });
+    }
+
+    if (doctorId) {
+      const doctor = await Doctor.findOne({ userId: user._id });
+      if (!doctor || doctor.doctorId !== doctorId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid doctor ID or credentials',
+          data: null,
+        });
+      }
     }
 
     const token = generateToken(user);

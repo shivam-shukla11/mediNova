@@ -7,6 +7,11 @@ const doctorSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  doctorId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   departmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Department',
