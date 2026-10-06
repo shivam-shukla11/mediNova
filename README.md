@@ -114,10 +114,14 @@ The AI/ML layer is kept as a **separate microservice** rather than embedded in t
 
 ---
 
+## Local Setup and Build Guide
+
+See [the step-by-step build guide](docs/BUILD_GUIDE.md) for Node 24 setup, environment configuration, department seeding, verification commands, and the implementation roadmap.
+
 ## Development Progress
 
 ### ✅ Phase 1 — Authentication System (Completed)
-- [x] User registration (Patient, Doctor, Admin roles) with linked Patient/Doctor documents
+- [x] Patient and Doctor registration with linked profiles; hospital Admin login configured through environment variables
 - [x] Password hashing with bcrypt
 - [x] Duplicate email validation
 - [x] JWT-based login
@@ -129,11 +133,21 @@ The AI/ML layer is kept as a **separate microservice** rather than embedded in t
 - [x] CORS restricted to configured `CLIENT_URL` origin (default: http://localhost:5173)
 - [x] Input sanitization on free-text fields (name, medicalHistory, address, specialization, qualification)
 
-### ⬜ Phase 2 — Appointment Booking (Next up)
-- [ ] Patient books appointment with doctor
-- [ ] Patient views their appointments
-- [ ] Doctor views assigned appointments
-- [ ] Appointment status updates
+### ✅ Phase 2 — Appointment Booking and Queue Foundation
+- [x] Patient books appointment with doctor
+- [x] Patient views their appointments
+- [x] Doctor views assigned appointments
+- [x] Patient confirmation/cancellation and reception check-in
+- [x] Doctor availability, shift capacity, leave checks, and IST clinic dates
+- [x] Transactional queue updates and concurrency-safe duplicate booking checks
+- [x] Patient/doctor profile editing and searchable Admin user directory
+- [x] Live queue estimates and role-scoped frontend integration
+- [x] Isolated Atlas integration tests for capacity, concurrency, leave, and privacy
+
+### ⬜ Phase 3 — Consultation and Billing (Next)
+- [ ] Start and complete consultations with recorded durations
+- [ ] Save prescriptions and generate bills exactly once
+- [ ] Update learned consultation averages and patient clinical history
 
 ---
 

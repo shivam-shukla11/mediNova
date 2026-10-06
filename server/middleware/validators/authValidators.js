@@ -19,6 +19,7 @@ exports.registerValidation = [
     .withMessage('Password must contain at least one letter and one number'),
   body('phone')
     .trim()
+    .customSanitizer(value => typeof value === 'string' ? value.replace(/[\s()-]/g, '') : value)
     .matches(/^(\+91)?[0-9]{10}$/)
     .withMessage('Phone must be 10 digits, optionally prefixed with +91'),
   body('role')
@@ -49,56 +50,51 @@ exports.registerValidation = [
       if (req.body.role === 'Doctor' && !value) {
         throw new Error('Department ID is required for Doctor');
       }
-      if (req.body.role === 'Doctor' && value && !value.match(/^[0-9a-fA-F]{24}$/)) {
+      if (req.body.role === 'Doctor' && value && (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value))) {
         throw new Error('Department ID must be a valid MongoDB ID');
       }
       return true;
     }),
   body('specialization')
+    .trim()
     .custom((value, { req }) => {
-      if (req.body.role === 'Doctor' && !value) {
-        throw new Error('Specialization is required for Doctor');
-      }
+      if (req.body.role === 'Doctor' && !value) throw new Error('Specialization is required');
       return true;
-    })
-    .trim(),
+    }),
   body('qualification')
+    .trim()
     .custom((value, { req }) => {
-      if (req.body.role === 'Doctor' && !value) {
-        throw new Error('Qualification is required for Doctor');
-      }
+      if (req.body.role === 'Doctor' && !value) throw new Error('Qualification is required');
       return true;
-    })
-    .trim(),
+    }),
   body('consultationFee')
     .custom((value, { req }) => {
-      if (req.body.role === 'Doctor' && !value) {
-        throw new Error('Consultation fee is required for Doctor');
-      }
-      if (req.body.role === 'Doctor' && value && isNaN(parseFloat(value))) {
-        throw new Error('Consultation fee must be a number');
-      }
-      if (req.body.role === 'Doctor' && value && parseFloat(value) <= 0) {
+      if (req.body.role === 'Doctor' &&
+          (!['number', 'string'].includes(typeof value) || !Number.isFinite(Number(value)) || Number(value) <= 0)) {
         throw new Error('Consultation fee must be a positive number');
       }
       return true;
     }),
   body('shiftStart')
+    .trim()
     .custom((value, { req }) => {
-      if (req.body.role === 'Doctor' && !value) {
-        throw new Error('Shift start time is required for Doctor');
+      if (req.body.role === 'Doctor' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+        throw new Error('Shift start is required in 24-hour HH:MM format');
       }
       return true;
-    })
-    .trim(),
+    }),
   body('shiftEnd')
+    .trim()
     .custom((value, { req }) => {
-      if (req.body.role === 'Doctor' && !value) {
-        throw new Error('Shift end time is required for Doctor');
+      if (req.body.role !== 'Doctor') return true;
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+        throw new Error('Shift end is required in 24-hour HH:MM format');
+      }
+      if (/^([01]\d|2[0-3]):[0-5]\d$/.test(req.body.shiftStart) && value <= req.body.shiftStart) {
+        throw new Error('Shift end must be later than shift start on the same day');
       }
       return true;
-    })
-    .trim(),
+    }),
 ];
 
 exports.loginValidation = [
@@ -119,7 +115,7 @@ exports.handleValidationErrors = (req, res, next) => {
       success: false,
       message: 'Validation failed',
       errors: errors.array().map(err => ({
-        field: err.param,
+        field: err.path,
         message: err.msg,
       })),
     });

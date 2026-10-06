@@ -18,7 +18,11 @@ function Page() {
   return (
     <div className="space-y-6">
       <PageHeader title="Mark Leave" description="Let reception know when you're unavailable." />
-      <EmptyState icon={CalendarOff} title="Leave form coming next" description="A date-range picker with reason will be available here." />
+      <EmptyState
+        icon={CalendarOff}
+        title="Leave form coming next"
+        description="A date-range picker with reason will be available here."
+      />
     </div>
   );
 }

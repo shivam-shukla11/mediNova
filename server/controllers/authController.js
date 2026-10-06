@@ -1,30 +1,18 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Department = require('../models/Department');
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medinova.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin@123';
-const ADMIN_ID = process.env.ADMIN_ID || 'ADM_001';
-const JWT_SECRET = process.env.JWT_SECRET || 'medinova_dev_jwt_secret';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.toLowerCase().trim();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_ID = process.env.ADMIN_ID;
+const { generateToken } = require('../config/auth');
+const { nextDoctorId } = require('../services/doctorIdService');
 
 const sanitize = (str) => {
   if (typeof str !== 'string') return str;
   return str.trim().replace(/[<>]/g, '');
-};
-
-const generateToken = (user) => {
-  if (!JWT_SECRET) {
-    return null;
-  }
-
-  return jwt.sign(
-    { id: user._id, role: user.role },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
 };
 
 const createUserResponse = (user, token, extra = {}) => ({
@@ -112,12 +100,7 @@ exports.registerUser = async (req, res) => {
         });
       }
 
-      const abbreviation = department.departmentName
-        .slice(0, 3)
-        .toLowerCase();
-      const existingCount = await Doctor.countDocuments({ departmentId });
-      const sequence = String(existingCount + 1).padStart(3, '0');
-      doctorId = `${abbreviation}_${sequence}`;
+      doctorId = await nextDoctorId(department.departmentName);
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -198,6 +181,9 @@ exports.registerUser = async (req, res) => {
       },
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'An account with these details already exists', data: null });
+    }
     return res.status(500).json({
       success: false,
       message: 'Server error during registration',
@@ -219,6 +205,9 @@ exports.loginUser = async (req, res) => {
     }
 
     if (adminId) {
+      if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_ID) {
+        return res.status(503).json({ success: false, message: 'Admin login is not configured', data: null });
+      }
       if (password !== ADMIN_PASSWORD || adminId !== ADMIN_ID || email.toLowerCase().trim() !== ADMIN_EMAIL) {
         return res.status(401).json({
           success: false,
@@ -228,6 +217,9 @@ exports.loginUser = async (req, res) => {
       }
 
       let user = await User.findOne({ email: ADMIN_EMAIL });
+      if (user && (user.role !== 'Admin' || user.status !== 'Active')) {
+        return res.status(403).json({ success: false, message: 'Admin account is unavailable', data: null });
+      }
       if (!user) {
         const hashedAdminPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
         user = await User.create({
@@ -251,6 +243,10 @@ exports.loginUser = async (req, res) => {
         message: 'Invalid credentials',
         data: null,
       });
+    }
+
+    if (user.status !== 'Active') {
+      return res.status(403).json({ success: false, message: 'Account is inactive', data: null });
     }
 
     if (user.role === 'Admin' && !adminId) {

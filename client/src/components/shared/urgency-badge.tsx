@@ -31,13 +31,7 @@ export function UrgencyBadge({ level, className }: { level: Urgency; className?:
 }
 
 export type AppointmentStatus =
-  | "Pending"
-  | "Confirmed"
-  | "Cancelled"
-  | "Completed"
-  | "Waiting"
-  | "Checked-in"
-  | "In-progress";
+  "Pending" | "Confirmed" | "Cancelled" | "Completed" | "Waiting" | "Checked-in" | "In-progress";
 
 const STATUS_TONE: Record<AppointmentStatus, string> = {
   Pending: "bg-urgency-high-soft text-urgency-high",

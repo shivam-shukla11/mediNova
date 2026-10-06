@@ -1,24 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ClipboardList } from "lucide-react";
-import { EmptyState, PageHeader } from "@/components/shared/page";
-
+import { VisitsPage } from "@/components/shared/visits-page";
 export const Route = createFileRoute("/admin/appointments")({
-  head: () => ({
-    meta: [
-      { title: "Manage Appointments — MediNova" },
-      { name: "description", content: "All appointments with filters and walk-in registration." },
-      { property: "og:title", content: "Manage Appointments — MediNova" },
-      { property: "og:description", content: "All appointments with filters and walk-in registration." },
-    ],
-  }),
-  component: Page,
+  head: () => ({ meta: [{ title: "Manage Appointments — MediNova" }] }),
+  component: () => <VisitsPage mode="admin" />,
 });
-
-function Page() {
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Manage Appointments" description="All appointments with filters and walk-in registration." />
-      <EmptyState icon={ClipboardList} title="Appointment console coming next" description="Filters and walk-in registration will live here." />
-    </div>
-  );
-}

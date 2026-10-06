@@ -17,8 +17,15 @@ export const Route = createFileRoute("/admin/follow-up")({
 function Page() {
   return (
     <div className="space-y-6">
-      <PageHeader title="High-Risk Follow-up" description="Unconfirmed appointments sorted by no-show risk." />
-      <EmptyState icon={PhoneCall} title="Follow-up list coming next" description="Staff call list with confirm outcomes will appear here." />
+      <PageHeader
+        title="High-Risk Follow-up"
+        description="Unconfirmed appointments sorted by no-show risk."
+      />
+      <EmptyState
+        icon={PhoneCall}
+        title="Follow-up list coming next"
+        description="Staff call list with confirm outcomes will appear here."
+      />
     </div>
   );
 }

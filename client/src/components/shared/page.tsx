@@ -36,7 +36,9 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("surface-card flex flex-col items-center px-6 py-14 text-center", className)}>
+    <div
+      className={cn("surface-card flex flex-col items-center px-6 py-14 text-center", className)}
+    >
       <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-soft text-primary">
         <Icon className="h-6 w-6" />
       </span>
@@ -68,9 +70,7 @@ export function SectionCard({
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             {title && <h2 className="truncate text-base font-semibold">{title}</h2>}
-            {description && (
-              <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-            )}
+            {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
           </div>
           {action}
         </div>

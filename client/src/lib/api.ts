@@ -3,7 +3,7 @@
  * Swap VITE_API_URL to point at a deployed backend later.
  */
 export const API_BASE_URL =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? "http://localhost:5000";
+  (import.meta.env?.["VITE_API_URL"] as string | undefined) ?? "http://localhost:5000";
 
 const TOKEN_KEY = "medinova.token";
 const USER_KEY = "medinova.user";
@@ -41,7 +41,7 @@ export const userStore = {
     const raw = window.localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as AuthUser;
+      return extractUser(JSON.parse(raw));
     } catch {
       return null;
     }
@@ -53,9 +53,11 @@ export const userStore = {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  fieldErrors: Record<string, string>;
+  constructor(message: string, status: number, fieldErrors: Record<string, string> = {}) {
     super(message);
     this.status = status;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -78,14 +80,76 @@ export async function apiRequest<T>(
   }
 
   const text = await res.text();
-  const data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-
+  let data: unknown = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    if (res.ok) throw new ApiError("The server returned an invalid response.", res.status);
+    throw new ApiError(text || "Something went wrong.", res.status);
+  }
   if (!res.ok) {
-    const message =
-      (data['message'] as string) || (data['error'] as string) || "Something went wrong.";
-    throw new ApiError(message, res.status);
+    const envelope = asRecord(data);
+    const message = envelope?.["message"] ?? envelope?.["error"];
+    const fieldErrors: Record<string, string> = {};
+    if (Array.isArray(envelope?.["errors"])) {
+      for (const entry of envelope["errors"]) {
+        const error = asRecord(entry);
+        const field = error?.["field"];
+        const detail = error?.["message"];
+        if (
+          typeof field === "string" &&
+          typeof detail === "string" &&
+          !Object.hasOwn(fieldErrors, field)
+        ) {
+          Object.defineProperty(fieldErrors, field, { value: detail, enumerable: true });
+        }
+      }
+    }
+    throw new ApiError(
+      typeof message === "string" ? message : "Something went wrong.",
+      res.status,
+      fieldErrors,
+    );
   }
   return data as T;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+export function extractUser(payload: unknown): AuthUser {
+  const envelope = asRecord(payload);
+  const data = asRecord(envelope?.["data"]);
+  const user = asRecord(envelope?.["user"] ?? data?.["user"] ?? envelope?.["data"] ?? payload);
+  if (
+    !user ||
+    typeof user["name"] !== "string" ||
+    typeof user["email"] !== "string" ||
+    !["Patient", "Doctor", "Admin"].includes(String(user["role"]))
+  ) {
+    throw new ApiError("The server returned an invalid user profile.", 502);
+  }
+  return user as unknown as AuthUser;
+}
+
+export async function restoreSession(): Promise<AuthUser | null> {
+  if (!tokenStore.get()) {
+    tokenStore.clear();
+    return null;
+  }
+  try {
+    const fresh = extractUser(await apiRequest<unknown>("/api/auth/me"));
+    userStore.set(fresh);
+    return fresh;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 0) return userStore.get();
+    // An expired, revoked, or malformed session must not keep the user signed in.
+    tokenStore.clear();
+    return null;
+  }
 }
 
 /** Normalises the various shapes a login/register response may take. */
@@ -93,7 +157,10 @@ export function extractAuth(payload: Record<string, unknown>): {
   token: string;
   user: AuthUser;
 } {
-  const token = (payload['token'] ?? (payload['data'] as any)?.token) as string;
-  const user = (payload['user'] ?? (payload['data'] as any)?.user ?? payload['data']) as AuthUser;
-  return { token, user };
+  const data = asRecord(payload["data"]);
+  const token = payload["token"] ?? data?.["token"];
+  if (typeof token !== "string" || !token) {
+    throw new ApiError("The server returned an invalid authentication response.", 502);
+  }
+  return { token, user: extractUser(payload) };
 }

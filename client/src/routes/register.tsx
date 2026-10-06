@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { HeartPulse, Loader2, Stethoscope } from "lucide-react";
+import { Eye, EyeOff, HeartPulse, Loader2, Stethoscope } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
@@ -14,9 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { API_BASE_URL, type Role } from "@/lib/api";
+import { ApiError, type Role } from "@/lib/api";
 import { dashboardPathFor, useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { useDepartments } from "@/hooks/use-departments";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -41,12 +42,6 @@ const ROLES: { role: Role; label: string; blurb: string; icon: typeof HeartPulse
   { role: "Patient", label: "Patient", blurb: "Book visits & track care", icon: HeartPulse },
   { role: "Doctor", label: "Doctor", blurb: "Run your daily queue", icon: Stethoscope },
 ];
-
-interface Department {
-  _id: string;
-  departmentName: string;
-  description?: string;
-}
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -76,16 +71,23 @@ function Field({
   label,
   children,
   className,
+  error,
 }: {
   id?: string;
   label: string;
   children: React.ReactNode;
   className?: string;
+  error?: string | undefined;
 }) {
   return (
     <div className={cn("space-y-2", className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -95,65 +97,55 @@ function RegisterPage() {
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>("Patient");
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-
-  useEffect(() => {
-    if (role !== "Doctor") return;
-    let cancelled = false;
-    setLoadingDepartments(true);
-    fetch(`${API_BASE_URL}/api/departments`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (cancelled) return;
-        setDepartments(json?.data?.departments ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setDepartments([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingDepartments(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [role]);
+  const departmentQuery = useDepartments(role === "Doctor");
+  const departments = departmentQuery.data?.data.departments ?? [];
+  const loadingDepartments = departmentQuery.isLoading;
 
   useEffect(() => {
     if (ready && user) navigate({ to: dashboardPathFor(user.role), replace: true });
   }, [ready, user, navigate]);
 
-  const set = (key: string) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const set = (key: string) => (value: string) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors((errors) => {
+      const next = { ...errors };
+      delete next[key === "department" ? "departmentId" : key];
+      return next;
+    });
+  };
 
   function buildPayload() {
     const base = {
-      name: form['name']?.trim(),
-      email: form['email']?.trim(),
-      password: form['password'],
-      phone: form['phone']?.trim(),
+      name: form["name"]?.trim(),
+      email: form["email"]?.trim(),
+      password: form["password"],
+      phone: form["phone"]?.trim(),
       role,
     };
     if (role === "Patient") {
       return {
         ...base,
-        dob: form['dob'],
-        gender: form['gender'],
-        bloodGroup: form['bloodGroup'],
-        address: form['address'],
-        medicalHistory: form['medicalHistory'],
+        dob: form["dob"],
+        gender: form["gender"],
+        bloodGroup: form["bloodGroup"],
+        address: form["address"],
+        medicalHistory: form["medicalHistory"],
       };
     }
     if (role === "Doctor") {
       return {
         ...base,
-        departmentId: form['department'],
-        specialization: form['specialization'],
-        qualification: form['qualification'],
-        experience: Number(form['experience'] || 0),
-        consultationFee: Number(form['consultationFee'] || 0),
-        shiftStart: form['shiftStart'],
-        shiftEnd: form['shiftEnd'],
+        departmentId: form["department"],
+        specialization: form["specialization"],
+        qualification: form["qualification"],
+        experience: Number(form["experience"] || 0),
+        consultationFee: Number(form["consultationFee"] || 0),
+        shiftStart: form["shiftStart"],
+        shiftEnd: form["shiftEnd"],
       };
     }
     return base;
@@ -162,12 +154,21 @@ function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    setFieldErrors({});
+    setSubmitError("");
     try {
       const created = await register(buildPayload());
       toast.success("Account created — welcome to MediNova");
       navigate({ to: dashboardPathFor(created?.role ?? role), replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Registration failed");
+      const errors = err instanceof ApiError ? err.fieldErrors : {};
+      setFieldErrors(errors);
+      const message =
+        Object.values(errors)[0] ?? (err instanceof Error ? err.message : "Registration failed");
+      setSubmitError(
+        Object.keys(errors).length ? "Please correct the highlighted fields below." : message,
+      );
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -188,7 +189,11 @@ function RegisterPage() {
               <button
                 key={r.role}
                 type="button"
-                onClick={() => setRole(r.role)}
+                onClick={() => {
+                  setRole(r.role);
+                  setFieldErrors({});
+                  setSubmitError("");
+                }}
                 className={cn(
                   "rounded-2xl border p-3 text-left transition-all",
                   active
@@ -196,7 +201,9 @@ function RegisterPage() {
                     : "border-border hover:border-primary/40 hover:bg-secondary/60",
                 )}
               >
-                <r.icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                <r.icon
+                  className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")}
+                />
                 <p className="mt-2 text-sm font-semibold">{r.label}</p>
                 <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{r.blurb}</p>
               </button>
@@ -205,53 +212,74 @@ function RegisterPage() {
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <Field id="name" label="Full name">
+          {submitError && (
+            <p
+              role="alert"
+              className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              {submitError}
+            </p>
+          )}
+          <Field id="name" error={fieldErrors["name"]} label="Full name">
             <Input
               id="name"
+              minLength={2}
               required
               placeholder="Ananya Rao"
-              value={form['name'] ?? ""}
+              value={form["name"] ?? ""}
               onChange={(e) => set("name")(e.target.value)}
               className="h-11 rounded-xl"
             />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="email" label="Email">
+            <Field id="email" error={fieldErrors["email"]} label="Email">
               <Input
                 id="email"
                 type="email"
                 required
                 placeholder="ananya.rao@gmail.com"
-                value={form['email'] ?? ""}
+                value={form["email"] ?? ""}
                 onChange={(e) => set("email")(e.target.value)}
                 className="h-11 rounded-xl"
               />
             </Field>
-            <Field id="phone" label="Phone">
+            <Field id="phone" error={fieldErrors["phone"]} label="Phone">
               <Input
                 id="phone"
                 required
                 inputMode="tel"
                 placeholder="+91 98765 43210"
-                value={form['phone'] ?? ""}
+                value={form["phone"] ?? ""}
                 onChange={(e) => set("phone")(e.target.value)}
                 className="h-11 rounded-xl"
               />
             </Field>
           </div>
 
-          <Field id="password" label="Password">
-            <Input
-              id="password"
-              type="password"
-              required
-              minLength={8}
-              placeholder="At least 8 characters, with at least one letter and one number."
-              value={form['password'] ?? ""}
-              onChange={(e) => set("password")(e.target.value)}
-              className="h-11 rounded-xl"
-            />
+          <Field id="password" error={fieldErrors["password"]} label="Password">
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="new-password"
+                minLength={8}
+                placeholder="At least 8 characters, with a letter and a number"
+                value={form["password"] ?? ""}
+                onChange={(e) => set("password")(e.target.value)}
+                className="h-11 rounded-xl pr-11"
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground">
               At least 8 characters, with at least one letter and one number.
             </p>
@@ -260,18 +288,19 @@ function RegisterPage() {
           {role === "Patient" && (
             <div className="space-y-4 rounded-2xl bg-secondary/50 p-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="dob" label="Date of birth">
+                <Field id="dob" error={fieldErrors["dob"]} label="Date of birth">
                   <Input
                     id="dob"
+                    required
                     type="date"
-                    value={form['dob'] ?? ""}
+                    value={form["dob"] ?? ""}
                     onChange={(e) => set("dob")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
                 </Field>
-                <Field label="Gender">
-                  <Select value={form['gender'] ?? ""} onValueChange={set("gender")}>
-                    <SelectTrigger className="h-11 rounded-xl bg-background">
+                <Field id="gender" error={fieldErrors["gender"]} label="Gender">
+                  <Select required value={form["gender"] ?? ""} onValueChange={set("gender")}>
+                    <SelectTrigger id="gender" className="h-11 rounded-xl bg-background">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
@@ -286,7 +315,7 @@ function RegisterPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Blood group">
-                  <Select value={form['bloodGroup'] ?? ""} onValueChange={set("bloodGroup")}>
+                  <Select value={form["bloodGroup"] ?? ""} onValueChange={set("bloodGroup")}>
                     <SelectTrigger className="h-11 rounded-xl bg-background">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
@@ -303,7 +332,7 @@ function RegisterPage() {
                   <Input
                     id="address"
                     placeholder="12, Nandi Durga Rd, Bengaluru"
-                    value={form['address'] ?? ""}
+                    value={form["address"] ?? ""}
                     onChange={(e) => set("address")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
@@ -314,7 +343,7 @@ function RegisterPage() {
                   id="medicalHistory"
                   rows={3}
                   placeholder="Asthma since 2018, no known drug allergies…"
-                  value={form['medicalHistory'] ?? ""}
+                  value={form["medicalHistory"] ?? ""}
                   onChange={(e) => set("medicalHistory")(e.target.value)}
                   className="rounded-xl bg-background"
                 />
@@ -325,9 +354,13 @@ function RegisterPage() {
           {role === "Doctor" && (
             <div className="space-y-4 rounded-2xl bg-secondary/50 p-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Department">
-                  <Select value={form['department'] ?? ""} onValueChange={set("department")}>
-                    <SelectTrigger className="h-11 rounded-xl bg-background">
+                <Field id="department" error={fieldErrors["departmentId"]} label="Department">
+                  <Select
+                    required
+                    value={form["department"] ?? ""}
+                    onValueChange={set("department")}
+                  >
+                    <SelectTrigger id="department" className="h-11 rounded-xl bg-background">
                       <SelectValue
                         placeholder={
                           loadingDepartments
@@ -346,70 +379,96 @@ function RegisterPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {!loadingDepartments && departments.length === 0 && (
+                  {departmentQuery.isError && (
+                    <p role="alert" className="text-xs text-destructive">
+                      Could not load departments.{" "}
+                      <button
+                        type="button"
+                        className="underline"
+                        onClick={() => departmentQuery.refetch()}
+                      >
+                        Retry
+                      </button>
+                    </p>
+                  )}
+                  {!departmentQuery.isError && !loadingDepartments && departments.length === 0 && (
                     <p className="text-xs text-muted-foreground">
                       No departments available — contact admin
                     </p>
                   )}
                 </Field>
-                <Field id="specialization" label="Specialization">
+                <Field
+                  id="specialization"
+                  error={fieldErrors["specialization"]}
+                  label="Specialization"
+                >
                   <Input
                     id="specialization"
+                    required
                     placeholder="Interventional Cardiology"
-                    value={form['specialization'] ?? ""}
+                    value={form["specialization"] ?? ""}
                     onChange={(e) => set("specialization")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
                 </Field>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="qualification" label="Qualification">
+                <Field
+                  id="qualification"
+                  error={fieldErrors["qualification"]}
+                  label="Qualification"
+                >
                   <Input
                     id="qualification"
+                    required
                     placeholder="MBBS, MD"
-                    value={form['qualification'] ?? ""}
+                    value={form["qualification"] ?? ""}
                     onChange={(e) => set("qualification")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
                 </Field>
-                <Field id="experience" label="Experience (years)">
+                <Field id="experience" error={fieldErrors["experience"]} label="Experience (years)">
                   <Input
                     id="experience"
                     type="number"
                     min={0}
                     placeholder="8"
-                    value={form['experience'] ?? ""}
+                    value={form["experience"] ?? ""}
                     onChange={(e) => set("experience")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
                 </Field>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                <Field id="consultationFee" label="Fee (₹)">
+                <Field id="consultationFee" error={fieldErrors["consultationFee"]} label="Fee (₹)">
                   <Input
                     id="consultationFee"
+                    required
                     type="number"
-                    min={0}
+                    min={0.01}
+                    step="0.01"
                     placeholder="600"
-                    value={form['consultationFee'] ?? ""}
+                    value={form["consultationFee"] ?? ""}
                     onChange={(e) => set("consultationFee")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
                 </Field>
-                <Field id="shiftStart" label="Shift start">
+                <Field id="shiftStart" error={fieldErrors["shiftStart"]} label="Shift start (IST)">
                   <Input
                     id="shiftStart"
+                    required
                     type="time"
-                    value={form['shiftStart'] ?? ""}
+                    value={form["shiftStart"] ?? ""}
                     onChange={(e) => set("shiftStart")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />
                 </Field>
-                <Field id="shiftEnd" label="Shift end">
+                <Field id="shiftEnd" error={fieldErrors["shiftEnd"]} label="Shift end (IST)">
                   <Input
                     id="shiftEnd"
+                    required
                     type="time"
-                    value={form['shiftEnd'] ?? ""}
+                    value={form["shiftEnd"] ?? ""}
                     onChange={(e) => set("shiftEnd")(e.target.value)}
                     className="h-11 rounded-xl bg-background"
                   />

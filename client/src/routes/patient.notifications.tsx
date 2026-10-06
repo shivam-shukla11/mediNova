@@ -17,8 +17,15 @@ export const Route = createFileRoute("/patient/notifications")({
 function Page() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Notifications" description="Reminders, queue updates and doctor leave alerts." />
-      <EmptyState icon={Bell} title="No notifications yet" description="Reminders and queue updates will appear here as they arrive." />
+      <PageHeader
+        title="Notifications"
+        description="Reminders, queue updates and doctor leave alerts."
+      />
+      <EmptyState
+        icon={Bell}
+        title="No notifications yet"
+        description="Reminders and queue updates will appear here as they arrive."
+      />
     </div>
   );
 }

@@ -4,9 +4,21 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 
 const HIGHLIGHTS = [
-  { icon: Activity, title: "AI symptom triage", copy: "Routes each patient to the right department in seconds." },
-  { icon: CalendarClock, title: "Arrival windows, not slots", copy: "Live queue positions replace rigid appointment times." },
-  { icon: ShieldCheck, title: "One calm record", copy: "Prescriptions, bills and history in a single place." },
+  {
+    icon: Activity,
+    title: "AI symptom triage",
+    copy: "Routes each patient to the right department in seconds.",
+  },
+  {
+    icon: CalendarClock,
+    title: "Arrival windows, not slots",
+    copy: "Live queue positions replace rigid appointment times.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "One calm record",
+    copy: "Prescriptions, bills and history in a single place.",
+  },
 ];
 
 export function AuthLayout({ children }: { children: ReactNode }) {

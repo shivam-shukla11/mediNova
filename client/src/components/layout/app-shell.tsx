@@ -20,7 +20,9 @@ function initials(name: string) {
 }
 
 function isItemActive(pathname: string, item: NavItem, items: NavItem[]) {
-  const deeper = items.some((i) => i.to !== item.to && i.to.startsWith(item.to) && pathname.startsWith(i.to));
+  const deeper = items.some(
+    (i) => i.to !== item.to && i.to.startsWith(item.to) && pathname.startsWith(i.to),
+  );
   if (deeper) return false;
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
@@ -76,7 +78,7 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
     }
   }, [ready, user, role, navigate]);
 
-  if (!ready || !user) {
+  if (!ready || !user || user.role !== role) {
     return (
       <div className="min-h-screen bg-background p-6">
         <Skeleton className="h-10 w-48 rounded-xl" />
@@ -110,7 +112,12 @@ export function AppShell({ role, children }: { role: Role; children: ReactNode }
             <p className="truncate text-xs text-muted-foreground">{ROLE_LABEL[role]}</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="mt-2 w-full justify-start gap-2 text-muted-foreground" onClick={handleLogout}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 w-full justify-start gap-2 text-muted-foreground"
+          onClick={handleLogout}
+        >
           <LogOut className="h-4 w-4" /> Sign out
         </Button>
       </div>

@@ -8,7 +8,10 @@ export const Route = createFileRoute("/admin/leave")({
       { title: "Doctor Leave Management — MediNova" },
       { name: "description", content: "Mark a doctor on leave and preview affected patients." },
       { property: "og:title", content: "Doctor Leave Management — MediNova" },
-      { property: "og:description", content: "Mark a doctor on leave and preview affected patients." },
+      {
+        property: "og:description",
+        content: "Mark a doctor on leave and preview affected patients.",
+      },
     ],
   }),
   component: Page,
@@ -17,8 +20,15 @@ export const Route = createFileRoute("/admin/leave")({
 function Page() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Doctor Leave Management" description="Mark a doctor on leave and preview affected patients." />
-      <EmptyState icon={CalendarOff} title="Leave management coming next" description="Leave form with impact preview lands here." />
+      <PageHeader
+        title="Doctor Leave Management"
+        description="Mark a doctor on leave and preview affected patients."
+      />
+      <EmptyState
+        icon={CalendarOff}
+        title="Leave management coming next"
+        description="Leave form with impact preview lands here."
+      />
     </div>
   );
 }

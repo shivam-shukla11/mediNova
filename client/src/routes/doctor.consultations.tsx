@@ -17,8 +17,15 @@ export const Route = createFileRoute("/doctor/consultations")({
 function Page() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Consultations" description="Patient history, diagnosis and prescriptions." />
-      <EmptyState icon={Stethoscope} title="Consultation workspace coming next" description="Patient details and prescription writing land here." />
+      <PageHeader
+        title="Consultations"
+        description="Patient history, diagnosis and prescriptions."
+      />
+      <EmptyState
+        icon={Stethoscope}
+        title="Consultation workspace coming next"
+        description="Patient details and prescription writing land here."
+      />
     </div>
   );
 }

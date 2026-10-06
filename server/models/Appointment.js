@@ -15,6 +15,13 @@ const appointmentSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  clinicDate: { type: String, match: /^\d{4}-\d{2}-\d{2}$/ },
+  activeBookingKey: { type: String },
+  confirmationStatus: {
+    type: String,
+    enum: ['Confirmed', 'Cancelled', 'NoResponse'],
+    default: 'NoResponse',
+  },
   symptoms: {
     type: String,
   },
@@ -59,5 +66,9 @@ const appointmentSchema = new mongoose.Schema({
     default: 'Pending',
   },
 }, { timestamps: true });
+
+appointmentSchema.index({ activeBookingKey: 1 }, { unique: true, sparse: true });
+appointmentSchema.index({ doctorId: 1, appointmentDate: 1, status: 1 });
+appointmentSchema.index({ patientId: 1, appointmentDate: -1 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

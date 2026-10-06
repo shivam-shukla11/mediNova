@@ -17,8 +17,15 @@ export const Route = createFileRoute("/patient/history")({
 function Page() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Medical History" description="Prescriptions and bills from your past visits." />
-      <EmptyState icon={FileHeart} title="History coming next" description="Downloadable prescriptions and bills will be listed here." />
+      <PageHeader
+        title="Medical History"
+        description="Prescriptions and bills from your past visits."
+      />
+      <EmptyState
+        icon={FileHeart}
+        title="History coming next"
+        description="Downloadable prescriptions and bills will be listed here."
+      />
     </div>
   );
 }

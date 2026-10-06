@@ -1,6 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { apiRequest, extractAuth, tokenStore, userStore, type AuthUser, type Role } from "./api";
+import {
+  apiRequest,
+  extractAuth,
+  tokenStore,
+  userStore,
+  restoreSession,
+  type AuthUser,
+  type Role,
+} from "./api";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -18,23 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const cached = userStore.get();
-    if (cached) setUser(cached);
-    setReady(true);
-    // Revalidate against the backend in the background.
-    if (tokenStore.get()) {
-      apiRequest<Record<string, unknown>>("/api/auth/me")
-        .then((res) => {
-          const fresh = (res['user'] ?? res['data'] ?? res) as AuthUser;
-          if (fresh?.role) {
-            userStore.set(fresh);
-            setUser(fresh);
-          }
-        })
-        .catch(() => {
-          /* keep cached session if the backend is unreachable */
-        });
-    }
+    let active = true;
+    restoreSession().then((fresh) => {
+      if (!active) return;
+      setUser(fresh);
+      setReady(true);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const persist = useCallback((payload: Record<string, unknown>) => {
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string, adminId?: string) => {
       const body: Record<string, unknown> = { email, password };
-      if (adminId) body['adminId'] = adminId;
+      if (adminId) body["adminId"] = adminId;
       const res = await apiRequest<Record<string, unknown>>("/api/auth/login", {
         method: "POST",
         auth: false,

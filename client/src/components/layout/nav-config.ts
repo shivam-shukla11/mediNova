@@ -1,5 +1,6 @@
 import {
   Activity,
+  Building2,
   BadgeIndianRupee,
   Bell,
   CalendarCheck,
@@ -30,16 +31,19 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Book Visit", to: "/patient/book", icon: CalendarPlus, primary: true },
     { label: "Appointments", to: "/patient/appointments", icon: CalendarCheck, primary: true },
     { label: "Medical History", to: "/patient/history", icon: FileHeart },
+    { label: "My Profile", to: "/patient/profile", icon: ClipboardList },
     { label: "Notifications", to: "/patient/notifications", icon: Bell, primary: true },
   ],
   Doctor: [
     { label: "Today's Queue", to: "/doctor", icon: LayoutDashboard, primary: true },
     { label: "Consultations", to: "/doctor/consultations", icon: Stethoscope, primary: true },
     { label: "Mark Leave", to: "/doctor/leave", icon: CalendarOff, primary: true },
+    { label: "My Profile", to: "/doctor/profile", icon: ClipboardList },
   ],
   Admin: [
     { label: "Overview", to: "/admin", icon: LayoutDashboard, primary: true },
     { label: "Users", to: "/admin/users", icon: Users, primary: true },
+    { label: "Departments", to: "/admin/departments", icon: Building2 },
     { label: "Appointments", to: "/admin/appointments", icon: ClipboardList, primary: true },
     { label: "Follow-up List", to: "/admin/follow-up", icon: PhoneCall, primary: true },
     { label: "Doctor Leave", to: "/admin/leave", icon: CalendarOff },

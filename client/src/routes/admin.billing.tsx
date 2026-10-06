@@ -18,7 +18,11 @@ function Page() {
   return (
     <div className="space-y-6">
       <PageHeader title="Billing" description="Bills and payment status across the hospital." />
-      <EmptyState icon={BadgeIndianRupee} title="Billing coming next" description="Bill list with payment status filters will appear here." />
+      <EmptyState
+        icon={BadgeIndianRupee}
+        title="Billing coming next"
+        description="Bill list with payment status filters will appear here."
+      />
     </div>
   );
 }

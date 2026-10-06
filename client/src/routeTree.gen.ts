@@ -17,17 +17,20 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAppointmentsRouteImport } from './routes/admin.appointments'
 import { Route as AdminBillingRouteImport } from './routes/admin.billing'
+import { Route as AdminDepartmentsRouteImport } from './routes/admin.departments'
 import { Route as AdminFollowUpRouteImport } from './routes/admin.follow-up'
 import { Route as AdminLeaveRouteImport } from './routes/admin.leave'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as DoctorIndexRouteImport } from './routes/doctor.index'
 import { Route as DoctorConsultationsRouteImport } from './routes/doctor.consultations'
 import { Route as DoctorLeaveRouteImport } from './routes/doctor.leave'
+import { Route as DoctorProfileRouteImport } from './routes/doctor.profile'
 import { Route as PatientIndexRouteImport } from './routes/patient.index'
 import { Route as PatientAppointmentsRouteImport } from './routes/patient.appointments'
 import { Route as PatientBookRouteImport } from './routes/patient.book'
 import { Route as PatientHistoryRouteImport } from './routes/patient.history'
 import { Route as PatientNotificationsRouteImport } from './routes/patient.notifications'
+import { Route as PatientProfileRouteImport } from './routes/patient.profile'
 import { Route as PatientTriageRouteImport } from './routes/patient.triage'
 
 const IndexRoute = IndexRouteImport.update({
@@ -70,6 +73,11 @@ const AdminBillingRoute = AdminBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDepartmentsRoute = AdminDepartmentsRouteImport.update({
+  id: '/departments',
+  path: '/departments',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFollowUpRoute = AdminFollowUpRouteImport.update({
   id: '/follow-up',
   path: '/follow-up',
@@ -100,6 +108,11 @@ const DoctorLeaveRoute = DoctorLeaveRouteImport.update({
   path: '/leave',
   getParentRoute: () => DoctorRoute,
 } as any)
+const DoctorProfileRoute = DoctorProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DoctorRoute,
+} as any)
 const PatientIndexRoute = PatientIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -125,6 +138,11 @@ const PatientNotificationsRoute = PatientNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => PatientRoute,
 } as any)
+const PatientProfileRoute = PatientProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => PatientRoute,
+} as any)
 const PatientTriageRoute = PatientTriageRouteImport.update({
   id: '/triage',
   path: '/triage',
@@ -139,15 +157,18 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/admin/appointments': typeof AdminAppointmentsRoute
   '/admin/billing': typeof AdminBillingRoute
+  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/follow-up': typeof AdminFollowUpRoute
   '/admin/leave': typeof AdminLeaveRoute
   '/admin/users': typeof AdminUsersRoute
   '/doctor/consultations': typeof DoctorConsultationsRoute
   '/doctor/leave': typeof DoctorLeaveRoute
+  '/doctor/profile': typeof DoctorProfileRoute
   '/patient/appointments': typeof PatientAppointmentsRoute
   '/patient/book': typeof PatientBookRoute
   '/patient/history': typeof PatientHistoryRoute
   '/patient/notifications': typeof PatientNotificationsRoute
+  '/patient/profile': typeof PatientProfileRoute
   '/patient/triage': typeof PatientTriageRoute
   '/admin/': typeof AdminIndexRoute
   '/doctor/': typeof DoctorIndexRoute
@@ -158,15 +179,18 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/admin/appointments': typeof AdminAppointmentsRoute
   '/admin/billing': typeof AdminBillingRoute
+  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/follow-up': typeof AdminFollowUpRoute
   '/admin/leave': typeof AdminLeaveRoute
   '/admin/users': typeof AdminUsersRoute
   '/doctor/consultations': typeof DoctorConsultationsRoute
   '/doctor/leave': typeof DoctorLeaveRoute
+  '/doctor/profile': typeof DoctorProfileRoute
   '/patient/appointments': typeof PatientAppointmentsRoute
   '/patient/book': typeof PatientBookRoute
   '/patient/history': typeof PatientHistoryRoute
   '/patient/notifications': typeof PatientNotificationsRoute
+  '/patient/profile': typeof PatientProfileRoute
   '/patient/triage': typeof PatientTriageRoute
   '/admin': typeof AdminIndexRoute
   '/doctor': typeof DoctorIndexRoute
@@ -181,15 +205,18 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/admin/appointments': typeof AdminAppointmentsRoute
   '/admin/billing': typeof AdminBillingRoute
+  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/follow-up': typeof AdminFollowUpRoute
   '/admin/leave': typeof AdminLeaveRoute
   '/admin/users': typeof AdminUsersRoute
   '/doctor/consultations': typeof DoctorConsultationsRoute
   '/doctor/leave': typeof DoctorLeaveRoute
+  '/doctor/profile': typeof DoctorProfileRoute
   '/patient/appointments': typeof PatientAppointmentsRoute
   '/patient/book': typeof PatientBookRoute
   '/patient/history': typeof PatientHistoryRoute
   '/patient/notifications': typeof PatientNotificationsRoute
+  '/patient/profile': typeof PatientProfileRoute
   '/patient/triage': typeof PatientTriageRoute
   '/admin/': typeof AdminIndexRoute
   '/doctor/': typeof DoctorIndexRoute
@@ -205,15 +232,18 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/appointments'
     | '/admin/billing'
+    | '/admin/departments'
     | '/admin/follow-up'
     | '/admin/leave'
     | '/admin/users'
     | '/doctor/consultations'
     | '/doctor/leave'
+    | '/doctor/profile'
     | '/patient/appointments'
     | '/patient/book'
     | '/patient/history'
     | '/patient/notifications'
+    | '/patient/profile'
     | '/patient/triage'
     | '/admin/'
     | '/doctor/'
@@ -224,15 +254,18 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/appointments'
     | '/admin/billing'
+    | '/admin/departments'
     | '/admin/follow-up'
     | '/admin/leave'
     | '/admin/users'
     | '/doctor/consultations'
     | '/doctor/leave'
+    | '/doctor/profile'
     | '/patient/appointments'
     | '/patient/book'
     | '/patient/history'
     | '/patient/notifications'
+    | '/patient/profile'
     | '/patient/triage'
     | '/admin'
     | '/doctor'
@@ -246,15 +279,18 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/appointments'
     | '/admin/billing'
+    | '/admin/departments'
     | '/admin/follow-up'
     | '/admin/leave'
     | '/admin/users'
     | '/doctor/consultations'
     | '/doctor/leave'
+    | '/doctor/profile'
     | '/patient/appointments'
     | '/patient/book'
     | '/patient/history'
     | '/patient/notifications'
+    | '/patient/profile'
     | '/patient/triage'
     | '/admin/'
     | '/doctor/'
@@ -327,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBillingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/departments': {
+      id: '/admin/departments'
+      path: '/departments'
+      fullPath: '/admin/departments'
+      preLoaderRoute: typeof AdminDepartmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/follow-up': {
       id: '/admin/follow-up'
       path: '/follow-up'
@@ -369,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DoctorLeaveRouteImport
       parentRoute: typeof DoctorRoute
     }
+    '/doctor/profile': {
+      id: '/doctor/profile'
+      path: '/profile'
+      fullPath: '/doctor/profile'
+      preLoaderRoute: typeof DoctorProfileRouteImport
+      parentRoute: typeof DoctorRoute
+    }
     '/patient/': {
       id: '/patient/'
       path: '/'
@@ -404,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatientNotificationsRouteImport
       parentRoute: typeof PatientRoute
     }
+    '/patient/profile': {
+      id: '/patient/profile'
+      path: '/profile'
+      fullPath: '/patient/profile'
+      preLoaderRoute: typeof PatientProfileRouteImport
+      parentRoute: typeof PatientRoute
+    }
     '/patient/triage': {
       id: '/patient/triage'
       path: '/triage'
@@ -417,6 +474,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAppointmentsRoute: typeof AdminAppointmentsRoute
   AdminBillingRoute: typeof AdminBillingRoute
+  AdminDepartmentsRoute: typeof AdminDepartmentsRoute
   AdminFollowUpRoute: typeof AdminFollowUpRoute
   AdminLeaveRoute: typeof AdminLeaveRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -426,6 +484,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAppointmentsRoute: AdminAppointmentsRoute,
   AdminBillingRoute: AdminBillingRoute,
+  AdminDepartmentsRoute: AdminDepartmentsRoute,
   AdminFollowUpRoute: AdminFollowUpRoute,
   AdminLeaveRoute: AdminLeaveRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -437,12 +496,14 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 interface DoctorRouteChildren {
   DoctorConsultationsRoute: typeof DoctorConsultationsRoute
   DoctorLeaveRoute: typeof DoctorLeaveRoute
+  DoctorProfileRoute: typeof DoctorProfileRoute
   DoctorIndexRoute: typeof DoctorIndexRoute
 }
 
 const DoctorRouteChildren: DoctorRouteChildren = {
   DoctorConsultationsRoute: DoctorConsultationsRoute,
   DoctorLeaveRoute: DoctorLeaveRoute,
+  DoctorProfileRoute: DoctorProfileRoute,
   DoctorIndexRoute: DoctorIndexRoute,
 }
 
@@ -454,6 +515,7 @@ interface PatientRouteChildren {
   PatientBookRoute: typeof PatientBookRoute
   PatientHistoryRoute: typeof PatientHistoryRoute
   PatientNotificationsRoute: typeof PatientNotificationsRoute
+  PatientProfileRoute: typeof PatientProfileRoute
   PatientTriageRoute: typeof PatientTriageRoute
   PatientIndexRoute: typeof PatientIndexRoute
 }
@@ -463,6 +525,7 @@ const PatientRouteChildren: PatientRouteChildren = {
   PatientBookRoute: PatientBookRoute,
   PatientHistoryRoute: PatientHistoryRoute,
   PatientNotificationsRoute: PatientNotificationsRoute,
+  PatientProfileRoute: PatientProfileRoute,
   PatientTriageRoute: PatientTriageRoute,
   PatientIndexRoute: PatientIndexRoute,
 }

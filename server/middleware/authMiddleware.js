@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../config/auth');
 const User = require('../models/User');
 
 exports.protect = async (req, res, next) => {
@@ -23,7 +23,7 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyToken(token);
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
@@ -32,6 +32,10 @@ exports.protect = async (req, res, next) => {
         message: 'User not found',
         data: null,
       });
+    }
+
+    if (user.status !== 'Active') {
+      return res.status(403).json({ success: false, message: 'Account is inactive', data: null });
     }
 
     req.user = user;

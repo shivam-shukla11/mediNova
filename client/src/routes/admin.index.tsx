@@ -18,7 +18,11 @@ function Page() {
   return (
     <div className="space-y-6">
       <PageHeader title="Hospital Overview" description="Today's key numbers at a glance." />
-      <EmptyState icon={LayoutDashboard} title="Analytics coming next" description="Appointments today, revenue and doctor utilisation will show here." />
+      <EmptyState
+        icon={LayoutDashboard}
+        title="Analytics coming next"
+        description="Appointments today, revenue and doctor utilisation will show here."
+      />
     </div>
   );
 }
